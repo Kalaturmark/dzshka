@@ -1,0 +1,92 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Products with Pagination";
+}
+
+<div id="product-list"></div>
+<div id="pagination"></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script>
+    const pageSize = 5;
+    let currentPage = 1;
+    
+    function fetchProducts(pageNumber) {
+        $.ajax({
+            url: `/Index?handler=Products`,
+            type: 'GET',
+            data: { pageNumber: pageNumber, pageSize: pageSize },
+            success: function (response) {
+                renderProducts(response.products);
+                renderPagination(response.totalProducts, pageNumber);
+            },
+            error: function () {
+                alert("Помилка при завантаженні даних");
+            }
+        });
+    }
+    
+    function renderProducts(products) {
+        let productList = $("#product-list");
+        productList.empty();
+        products.forEach(product => {
+            productList.append(`<div>${product.name} - ${product.price}</div>`);
+        });
+    }
+    
+    function renderPagination(totalProducts, currentPage) {
+        let pagination = $("#pagination");
+        pagination.empty();
+        let totalPages = Math.ceil(totalProducts / pageSize);
+
+        for (let i = 1; i <= totalPages; i++) {
+            pagination.append(`<button onclick="fetchProducts(${i})">${i}</button>`);
+        }
+    }
+    
+    $(document).ready(function () {
+        fetchProducts(currentPage);
+    });
+</script>
+
+@code {
+    private List<Product> Products = new List<Product>
+    {
+        new Product { Id = 1, Name = "Product 1", Price = 10 },
+        new Product { Id = 2, Name = "Product 2", Price = 20 },
+        new Product { Id = 3, Name = "Product 3", Price = 30 },
+        new Product { Id = 4, Name = "Product 4", Price = 40 },
+        new Product { Id = 5, Name = "Product 5", Price = 50 },
+        new Product { Id = 6, Name = "Product 6", Price = 60 },
+        new Product { Id = 7, Name = "Product 7", Price = 70 },
+        new Product { Id = 8, Name = "Product 8", Price = 80 },
+        new Product { Id = 9, Name = "Product 9", Price = 90 },
+        new Product { Id = 10, Name = "Product 10", Price = 100 },
+        new Product { Id = 11, Name = "Product 11", Price = 110 }
+    };
+    
+    public IActionResult OnGetProducts(int pageNumber = 1, int pageSize = 5)
+    {
+        var pagedProducts = Products
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var totalProducts = Products.Count;
+
+        return new JsonResult(new
+        {
+            Products = pagedProducts,
+            TotalProducts = totalProducts
+        });
+    }
+    
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+    }
+}
